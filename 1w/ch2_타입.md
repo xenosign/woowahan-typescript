@@ -57,7 +57,7 @@ interface Cat {
 }
 
 let pet: Pet;
-let cat: Cat = { name: "Kitty", age: 2 };
+let cat: Cat = { name: 'Kitty', age: 2 };
 
 pet = cat; // OK
 ```
@@ -87,7 +87,7 @@ function greet(p: Person) {
   console.log(`Hello, I'm ${p.name}`);
 }
 
-const developer = new Developer("tetz", 40);
+const developer = new Developer('tetz', 40);
 
 greet(developer); // Hello, I'm tetz
 ```
@@ -117,4 +117,133 @@ greet(developer); // Hello, I'm tetz
 
 ### 2.2.9 타입을 확인하는 방법
 
--
+- TS 의 type 키워드는 독특한 특성을 가진다
+- JS 의 typeof 는 해당 데이터의 타입 값을 값으로 반환하지만, TS 의 type 은 해당 데이터의 값을 타입으로 반환하며 해당 타입은 JS 로 컴파일시 사라진다
+- 타입 단언(as) 를 사용하여 타입을 강제 가능
+
+## 2.3 원시 타입
+
+### 2.3.1 boolean
+
+### 2.3.2 undefined
+
+### 2.3.3 null
+
+\*\* [p.69] 의도적으로 빈 값 예시 무직 실화냐?
+
+### 2.3.4 number
+
+### 2.3.5 bigInt
+
+- ES2020 에서 도입, TS 3.2 부터 사용 가능
+- 2^53 - 1 보다 큰 수 처리 가능
+- number 와 상호 작용 불가능
+
+### 2.3.6 string
+
+### 2.3.7 symbol
+
+- ES2015 에서 도입, 어느 값과도 중복이 불가능한 유일한 값 생성 가능
+
+### 2.3.8 tsconfig 에 따른 설정
+
+- null, undefined 의 경우 strictNullChecks 옵션에 따라 개발자가 명시적으로 해당 타입에 null, undefined 를 포함해야만 사용이 가능
+
+## 2.4 객체 타입
+
+### 2.4.1 object
+
+- 객체계의 any 타입이기 때문에 가급적 사용하지 않기를 권장
+- JS 의 클래스, 함수, 배열, 정규 표현식 등등이 전부 객체이기 때문에 이 모든 것과 호환되는 이슈 발생
+
+### 2.4.2 {}
+
+- 객체 리터럴 방식으로 객체 생성시 사용, 선언된 구조와 일치해야만 사용 가능
+- 빈 객체 지정을 위해 사용이 가능하나, 제대로된 사용 방법으로는 유틸리티 타입으로 사용하는 편이 바람직
+
+### 2.4.3 array
+
+- TS 는 배열을 array 라는 별도의 타입으로 다룬다
+- Array 키워드 또는 [] 를 통해 선언, 단 튜플도 [] 로 선언하므로 주의 필요
+
+### 2.4.4 type 과 interface 키워드
+
+- 둘 다 같은 기능을 하므로 팀의 컨벤션에 따라 다르게 사용한다
+
+#### type
+
+- 모든 타입 선언 가능
+- 기호(&)를 통한 상속 가능
+- 선언적 상속 불가능
+- computed value 사용 가능
+
+```ts
+interface Person {
+  name: string;
+  age: number;
+}
+
+type Student = Person & {
+  // 확장(상속)
+  school: string;
+};
+
+// 선언적 확장 불가능
+interface Person {
+  gender: string; // ❗️Error: Duplicate identifier 'Person'.
+}
+
+// computed value 사용 가능
+type Subjects = 'Math' | 'Science' | 'Sociology';
+
+type Grades = {
+  [key in Subjects]: string;
+};
+```
+
+#### interface
+
+- 객체에 대한 타입만 선언 가능
+- 상속 가능
+- 선언적 상속 가능
+- computed value 사용 불가능
+
+```ts
+interface Person {
+  name: string;
+  age: number;
+}
+
+interface Student extends Person {
+  // 확장(상속)
+  school: string;
+}
+
+interface Person {
+  // 선언적 확장
+  gender: string;
+}
+
+// computed value 사용 불가능
+type Subjects = 'math' | 'science' | 'sociology';
+
+interface Grades {
+  [key in Subjects]: string; // ❗️Error: A mapped type may not declare properties or methods.
+}
+```
+
+#### 결론
+
+- type : 단순한 원시값, 튜플, 유니언 타입 선언에 사용 / computed value 필요시 사용
+- interface : 객체 타입 선언에 사용 / 확장이 필요한 경우 사용
+
+\*\* [p. 76] 배민에서 이정도로 팀별로 컨벤션이 갈릴 줄이야.... 역시 This is JS!!!! ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ 다들 어찌 생각하시나요? 최근 자바를 배워서 그런가 interface 를 객체 지향적으로 쓴다는 말이 더 와닿긴 하네요
+
+### 2.4.5 function
+
+- 함수는 객체이나 JS, TS 에서는 별도로 function 타입을 제공
+- 호출 시그니쳐 : 함수 타입을 지정하는 문법
+
+```ts
+type add = (a: number, b: number) => number;
+```
