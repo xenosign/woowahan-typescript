@@ -85,6 +85,7 @@ const optionalTuple1: [number, number, number?] = [1, 2];
 - 단, TS 가 자동으로 추론한 값을 사용하는 것은 지양
 - 단, 할당된 값을 넘어서는 범위의 경우 문제 발생의 여지가 있다
 - enum 은 JS 로 변환시 IIFE 로 변환 되므로, 번들링의 사이즈가 증가하는 이슈 발생
+  - const enum 또는 as const assertion 을 사용해서 해결 가능
 
 ```ts
 enum ProgrammingLang {
