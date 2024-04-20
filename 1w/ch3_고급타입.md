@@ -15,12 +15,53 @@
 
 ### 3.1.2 unknown 타입
 
-- any 를 제외한 다른 타입으로 선언된 변수에는 할당 불가능
+- unknown 타입에는 모든 타입 할당 가능, 반대로 any 를 제외한 다른 타입으로 선언된 변수에는 unknown 타입 할당 불가능
 - 할당 시점에는 에러가 발생하지 않지만, 아무런 값이 할당 되지 않은채로 실행되면 컴파일 에러 발생
 - any 는 무조건 넘어가지만, unknown 은 타입을 강제하여 버그 가능성을 줄일 수 있다
 
+- unkown 을 사용하여 아직 어떤 값이 들어올지 모르는 메서드의 타입을 강제하는 코드
+
+```ts
+const jsonParserUnknown = (jsonString: string): unknown =>
+  JSON.parse(jsonString);
+
+const myOtherAccount = jsonParserUnknown(`{ "name": "Samuel" }`);
+
+console.log(myOtherAccount.name); // ERR
+```
+
+- 아래와 같이 타입을 정확히 지정해야만 컴파일 오류가 발생하지 않아 개발자의 실수를 줄일 수 있다
+
+```ts
+type jsonObj = {
+  name: string;
+};
+
+const jsonParserUnknown = (jsonString: string): jsonObj =>
+  JSON.parse(jsonString);
+
+const myOtherAccount = jsonParserUnknown(`{ "name": "Samuel" }`);
+
+console.log(myOtherAccount.name);
+```
+
+#### 강제 형변환
+
+- 보통 as unknown as Type 을 사용하여 변환한다
+- 변환 대상의 서로 부모 자식 관계가 있으면, as unknown 생략이 가능 => 같은 타입이므로
+- 부모 자식 관계가 아니면, as unknown 으로 변환하여 아무런 타입이나 할당이 가능한 상태로 만들어 다시 할당하는 방법을 사용한다
+  - 그런데, 이거 any 써도 무방하지 않나요? 암만 생각해도 그런듯
+
 \*\* [p.86] 깨진 유리창 이론에 대해서 어찌 생각하시나요? 실제로 사례를 본적이 있나요?
 \*\* [p.87] as unknown as Type 에 대해 왜 서로 싸우죠? ㅋㅋㅋ
+
+```ts
+const env = process.env as unknown as ProcessEnv;
+
+const env = process.env as any as ProcessEnv;
+```
+
+\*\* [p.87] 두 코드의 차이가 있을까요?
 
 ### 3.1.3 void 타입
 
