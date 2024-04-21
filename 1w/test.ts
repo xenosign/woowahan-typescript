@@ -41,12 +41,12 @@
 // console.log(ProgrammingLang.Cplusplus);
 // console.log(ProgrammingLang[200]); // undefined
 
-// enum NUMBER {
-//   ONE = 1,
-//   TWO = 2,
-// }
+enum NUMBER {
+  ONE = 1,
+  TWO = 2,
+}
 
-// const myNum: NUMBER = 1;
+const myNum: NUMBER = 1;
 
 // const enum STRING_NUMBER {
 //   ONE = 'ONE',
