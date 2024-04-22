@@ -348,3 +348,24 @@ function normalExampleFunc<T>(arg: T) {
 ### 3.3.1 함수의 제네릭
 
 - 함수의 매개변수나 반환 값에 다양한 타입을 넣고 싶을 때 사용
+
+```ts
+import { ObjectType, EntitySchema, Repository, getConnection } from 'typeorm';
+
+function ReadOnlyRepository<T>(
+  target: ObjectType<T> | EntitySchema<T> | string
+): Repository<T extends any ? any : never> {
+  return getConnection('ro').getRepository(target);
+}
+```
+
+\*\* [p.109] 안되는 코드 왜케 많죠?
+
+### 3.3.2 호출 시그니처의 제네릭
+
+- 함수의 매개변수와 반환 타입을 미리 선언하는 것
+- 제네릭 타입을 어디에 위치 시킬지에 따라 제네릭을 언제 구체 타입으로 한정할지 결정 가능
+
+```ts
+
+```

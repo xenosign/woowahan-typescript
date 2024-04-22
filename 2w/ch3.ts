@@ -244,6 +244,15 @@ import { ObjectType, EntitySchema, Repository, getConnection } from 'typeorm';
 
 function ReadOnlyRepository<T>(
   target: ObjectType<T> | EntitySchema<T> | string
-): Repository<T> {
+): Repository<T extends any ? any : never> {
   return getConnection('ro').getRepository(target);
 }
+
+// interface useSelectPaginationProps<T> {
+//   categoryAtom: RecoilState<number>;
+//   filterAtom: RecoilState<string[]>;
+//   sortAtom: RecoilState<SortType>;
+//   fetcherFunc: (
+//     props: CommonListRequest
+//   ) => Promise<DefaultResponse<ContentListResponse<T>>>;
+// }
