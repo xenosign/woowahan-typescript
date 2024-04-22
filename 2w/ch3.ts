@@ -93,3 +93,157 @@ const PromotionPropertyTypeObj: PromotionProertyType = {
     name: 'name',
   },
 };
+
+type ExampleMapped = {
+  a: number;
+  b: string;
+  c: boolean;
+};
+
+type Subset<T> = {
+  [K in keyof T]?: T[K];
+};
+
+const aExampleMapped: Subset<ExampleMapped> = { a: 3 };
+const bExampleMapped: Subset<ExampleMapped> = { b: 'hello' };
+const cExampleMapped: Subset<ExampleMapped> = { c: true };
+
+type ReadOnlyEx = {
+  readonly a: number;
+  readonly b: string;
+};
+
+let objByReadOnlyEx: ReadOnlyEx = {
+  a: 1,
+  b: '2',
+};
+
+// objByReadOnlyEx.a = 3; // ERR
+console.log(objByReadOnlyEx);
+
+type CreateMutable<T> = {
+  -readonly [P in keyof T]: T[P];
+};
+
+type ChangedMutableTypeFromReadOnlyEx = CreateMutable<ReadOnlyEx>;
+
+let objByChangedMutableTypeFromReadOnlyEx = {
+  a: 1,
+  b: '2',
+};
+
+objByChangedMutableTypeFromReadOnlyEx.a = 3;
+objByChangedMutableTypeFromReadOnlyEx.b = '2';
+
+console.log(objByChangedMutableTypeFromReadOnlyEx);
+
+type OptionalEx = {
+  a?: number;
+  b?: string;
+  c: boolean;
+};
+
+type Concrete<T> = {
+  [P in keyof T]-?: T[P];
+};
+
+type ChandedConcreteTypeFromOptionalEx = Concrete<OptionalEx>;
+
+let objByChandedConcreteTypeFromOptionalEx: ChandedConcreteTypeFromOptionalEx =
+  {
+    a: 1,
+    b: '2',
+    c: true,
+  };
+
+console.log(objByChandedConcreteTypeFromOptionalEx);
+
+const BottomSheetMap = {
+  RECENT_CONTACTS: 'RecentContactsBottomSheet',
+  CARD_SELECT: 'CardSelectBottomSheet',
+  SORT_FILTER: 'SortFilterBottomSheet',
+  PRODUCT_SELECT: 'ProductSelectBottomSheet',
+  REPLY_CARD_SELECT: 'ReplyCardSelectBottomSheet',
+  RESEND: 'ResendBottomSheet',
+  STICKER: 'StickerBottomSheet',
+  BASE: null,
+};
+
+export type BOTTOM_SHEET_ID = keyof typeof BottomSheetMap;
+
+// 불필요한 반복이 발생한다
+type BottomSheetStore = {
+  RECENT_CONTACTS: {
+    resolver?: (payload: any) => void;
+    args?: any;
+    isOpened: boolean;
+  };
+  CARD_SELECT: {
+    resolver?: (payload: any) => void;
+    args?: any;
+    isOpened: boolean;
+  };
+  SORT_FILTER: {
+    resolver?: (payload: any) => void;
+    args?: any;
+    isOpened: boolean;
+  };
+  // ...
+};
+// Mapped Types를 통해 효율적으로 타입을 선언할 수 있다
+type BottomSheetStoreByMapped = {
+  [index in BOTTOM_SHEET_ID]: {
+    resolver?: (payload: any) => void;
+    args?: any;
+    isOpened: boolean;
+  };
+};
+
+type Stage =
+  | 'init'
+  | 'select-image'
+  | 'edit-image'
+  | 'decorate-card'
+  | 'capture-image';
+
+type StageName = `${Stage}-stage`;
+
+function exampleFunc<T>(arg: T): T[] {
+  return new Array(3).fill(arg);
+}
+
+console.log(exampleFunc('hello'));
+console.log(exampleFunc(3));
+
+function exampleFunc2<T>(arg: T): number {
+  // return arg.length; // ERR
+  return 0;
+}
+
+interface TypeWithLength {
+  length: number;
+}
+
+function exampleFunc3<T extends TypeWithLength>(arg: T): number {
+  return arg.length;
+}
+
+const arrowExampleFunc = <T>(arg: T) => {
+  return new Array(3).fill(arg);
+};
+
+const arrowExampleFunc2 = <T extends {}>(arg: T) => {
+  return new Array(3).fill(arg);
+};
+
+function normalExampleFunc<T>(arg: T) {
+  return new Array(3).fill(arg);
+}
+
+import { ObjectType, EntitySchema, Repository, getConnection } from 'typeorm';
+
+function ReadOnlyRepository<T>(
+  target: ObjectType<T> | EntitySchema<T> | string
+): Repository<T> {
+  return getConnection('ro').getRepository(target);
+}
