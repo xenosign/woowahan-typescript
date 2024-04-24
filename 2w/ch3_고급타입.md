@@ -367,5 +367,236 @@ function ReadOnlyRepository<T>(
 - 제네릭 타입을 어디에 위치 시킬지에 따라 제네릭을 언제 구체 타입으로 한정할지 결정 가능
 
 ```ts
+interface useSelectPaginationProps<T> {
+  categoryAtom: RecoilState<number>;
+  filterAtom: RecoilState<string[]>;
+  sortAtom: RecoilState<SortType>;
+  // 훅 사용시에 제네릭을 받아서, 해당 런타임에 타입 결정
+  fetcherFunc: (
+    props: CommonListRequest
+  ) => Promise<DefaultResponse<ContentListResponse<T>>>;
+}
+```
 
+- 배민에서 사용하는 사용자 Hook 타입과 실제 코드
+
+```ts
+// 통신 결과 타입 정의
+type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
+
+// 실제로 요청을 보내는 함수 타입 선언
+type Requester<RequestData, ResponseData> = {
+  sendRequest: (requestData: RequestData) => Promise<ResponseData>;
+  status: RequestStatus;
+};
+
+// 훅 타입을 정의하여 useState 와 같이 [] 로 status 와 리퀘스트 실행 함수를 받을 수 있도록 설정
+export type UseRequesterHookType = <RequestData = void, ResponseData = void>(
+  baseURL?: string | Headers,
+  defaultHeader?: Headers
+) => [RequestStatus, Requester<RequestData, ResponseData>];
+
+// 실제 훅 타입을 적용하여 훅 선언
+const useRequesterHook: UseRequesterHookType = <
+  RequestData = void,
+  ResponseData = void
+>(
+  baseURL?: string | Headers,
+  defaultHeader?: Headers
+) => {
+  const [status, setStatus] = useState<RequestStatus>('idle');
+
+  const sendRequest = async (
+    requestData: RequestData
+  ): Promise<ResponseData> => {
+    setStatus('loading');
+    try {
+      // 여기에서 실제 요청을 보냅니다.
+      const responseData = await fetch(baseURL as string, {
+        method: 'POST',
+        headers: defaultHeader,
+        body: JSON.stringify(requestData),
+      });
+      setStatus('success');
+      return responseData.json();
+    } catch (error) {
+      setStatus('error');
+      throw new Error('Request failed');
+    }
+  };
+
+  return [status, { sendRequest, status }];
+};
+
+// 사용 예시
+const [requestStatus, requester] = useRequesterHook<
+  { id: number },
+  { name: string }
+>('http://api.example.com', {
+  'Content-Type': 'application/json',
+});
+
+// 요청 보내기
+requester
+  .sendRequest({ id: 123 })
+  .then((response) => console.log('Response:', response))
+  .catch((error) => console.error('Error:', error));
+
+// 상태 확인
+console.log('Request status:', requestStatus);
+```
+
+### 3.3.3 제네릭 클래스
+
+- 외부에서 입력된 타입을 클래스 내부에 적용할 수 있는 클래스
+- 클래스 이름 뒤에 타입 매개변수인 `<T>` 를 선언하여 사용하며, DB 의 데이터 타입에 따라 해당 타입을 전달하여 사용이 가능
+
+```ts
+class LocalDB<T> {
+  async put(table: string, row: T): Promise<T> {
+    return new Promise<T>((resolved, rejected) => {
+      /* T 타입의 데이터를 DB에 저장 */
+    });
+  }
+
+  async get(table: string, key: any): Promise<T> {
+    return new Promise<T>((resolved, rejected) => {
+      /* T 타입의 데이터를 DB에서 가져옴 */
+    });
+  }
+
+  async getTable(table: string): Promise<T[]> {
+    return new Promise<T[]>((resolved, rejected) => {
+      /* T[] 타입의 데이터를 DB에서 가져 옴*/
+    });
+  }
+}
+```
+
+### 3.3.4 제한된 제네릭
+
+- 매개변수에 대한 제약 조건을 설정하는 기능
+- 타입 매개변수에 extends 키워드를 사용하여 특정 타입으로 제약 조건을 설정 가능
+- 특정 조건인지를 extends 키워드로 확인하여 3항 연산자로 동적 타입 설정도 가능
+
+```ts
+type ErrorRecord<Key extends string> = Exclude<Key, ErrorCodeType> extends never
+  ? Partial<Record<Key, boolean>>
+  : never;
+```
+
+- 위의 코드에서 Key 는 특정 타입으로 묶여있으므로 바운드 타입 매개변수라 부르고, 특정 타입인 string 을 상한 한계라고 한다
+
+```ts
+function useSelectPagination<
+  T extends CardListContent | CommonProductResponse
+>({
+  filterAtom,
+  sortAtom,
+  fetcherFunc,
+}: useSelectPaginationProps<T>): {
+  intersectionRef: RefObject<HTMLDivElement>;
+  data: T[];
+  categoryId: number;
+  isLoading: boolean;
+  isEmpty: boolean;
+} {
+  // ...
+}
+
+// 사용하는 쪽 코드
+const { intersectionRef, data, isLoading, isEmpty } =
+  useSelectPagination<CardListContent>({
+    categoryAtom: replyCardCategoryIdAtom,
+    filterAtom: replyCardFilterAtom,
+    sortAtom: replyCardSortAtom,
+    fetcherFunc: fetchReplyCardListByThemeGroup,
+  });
+```
+
+- 제네릭을 받아 동적으로 데이터를 리턴하는 형태의 커스텀 훅에 적용이 가능하다
+
+### 3.3.5 확장된 제네릭
+
+- 제레닉 타입은 여러 타입을 상속 가능하며 매개 변수를 여러개 사용이 가능하다
+
+```ts
+// 타입이 string 으로 제약되어 제네릭의 유연성이 떨어짐
+type ConcreteType<Key extends string> = {
+  data: Key;
+};
+
+// 유니온 타입을 상속하여 제네릭의 유연성은 지키면서 타입을 제약하는 방법
+type FlexibleType<Key extends string | number> = {
+  data: Key;
+};
+```
+
+- 유니온을 이용하면 하나의 제네릭이 여러 타입을 받게 할 수 있지만, 타입 매개변수가 여러개일 경우에는 제네릭을 하나 더 추가하여 선언
+
+### 3.3.6 제네릭 예시
+
+- 제네릭의 장점은 다양한 타입을 받을 수 있어, 코드를 효율적으로 재사용할 수 있다는 점이다
+- 현업에서는 API 응답 값의 타입 지정에 주로 사용된다
+
+```ts
+export const fetchPriceInfo = (): Promise<MobileApiResponse<PriceInfo>> => {
+  const priceUrl = 'http://api.price.com';
+
+  return request({
+    method: 'GET',
+    url: priceUrl,
+  });
+};
+
+export const fetchOrderInfo = (): Promise<MobileApiResponse<Order>> => {
+  const orderUrl = 'http://api.order.com';
+
+  return request({
+    method: 'GET',
+    url: orderUrl,
+  });
+};
+```
+
+- 각기 다른 요청에 다른 응답 데이터를 제너릭을 이용하여 하나의 타입으로 처리
+
+#### 제네릭을 굳이 사용하지 않아도 되는 타입
+
+- 제네릭을 무분별하게 사용하면 코드 길이만 늘어나고 가독성을 해칠 수 있다
+
+```ts
+// 재사용이 없을 코드에 적용한 경우
+type GType<T> = T;
+type RequirementType = 'USE' | 'UN_USE' | 'NON_SELECT';
+interface Order {
+  getRequirement(): GType<RequirementType>;
+}
+
+// 제네릭을 제거한 버전
+type RequirementType = 'USE' | 'UN_USE' | 'NON_SELECT';
+interface Order {
+  getRequirement(): RequirementType;
+}
+```
+
+#### any 사용하기
+
+- 쓰지 말자
+
+#### 가독성을 고려하지 않은 사용
+
+- 과하게 중첩되어 사용될 경우 가독성을 해치게 되므로, 필요에 따라 의미 단위로 분할하여 적용하는 편이 좋다
+
+```ts
+// 과한 중첩이 사용 된 경우
+type ReturnType<Record<OrderType,Partial<Record<CommonOrderStatus | CommonReturnStatus, Partial<Record<OrderRoleType, string[]>>>>>>;
+
+// 적절한 의미 분할이 적용 된 경우
+type CommonStatus = CommonOrderStatus | CommonReturnStatus;
+type PartialOrderRole = Partial<Record<OrderRoleType, string[]>>;
+type RecordCommonOrder = Record<CommonStatus, PartialOrderRole>;
+type RecordOrder = Record<OrderType, Partial<RecordCommonOrder>>;
+
+type ReturnType2<RecordOrder>;
 ```
