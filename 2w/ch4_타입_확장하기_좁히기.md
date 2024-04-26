@@ -326,3 +326,135 @@ const getAvailableDestinationNameList = async (): Promise<
   return destinationNames;
 };
 ```
+
+## 4.3 타입 좁히기 - 식별할 수 있는 유니온(Discriminated Unions)
+
+### 4.3.1 에러 정의하기
+
+- JS 는 덕타이핑 언어이므로 아래와 같이 유니온 타입으로 타입 에러가 발생하지 않는 문제가 발생한다
+
+```ts
+type TextError = {
+  errorCode: string;
+  errorMessage: string;
+};
+
+type ToastError = {
+  errorCode: string;
+  errorMessage: string;
+  toastShowDuration: number;
+};
+
+type AlertError = {
+  errorCode: string;
+  errorMessage: string;
+  onConfirm: () => void;
+};
+
+type ErrorFeedbackType = TextError | ToastError | AlertError;
+const errorArr: ErrorFeedbackType[] = [
+  { errorCode: '100', errorMessage: '텍스트 에러' },
+  { errorCode: '200', errorMessage: '토스트 에러', toastShowDuration: 3000 },
+  { errorCode: '300', errorMessage: '얼럿 에러', onConfirm: () => {} },
+];
+
+// 아래의 요소는 타입에 어긋나지만 JS 는 덕타이핑 언어이므로 별도의 타입 에러가 발생하지 않는 문제 발생
+const errArr: ErrorFeedbackType[] = [
+  {
+    errorCode: '999',
+    errorMessage: '잘못된에러',
+    toastShowDuration: 3000,
+    onConfirm: () => {},
+  },
+];
+```
+
+### 4.3.2 식별할 수 있는 유니온
+
+- 위의 문제를 식별할 수 있는 유니온을 활용하면 해결이 가능하다
+- 타입간의 구조 호환을 막기 위해 타입마다 구분할 수 있는 판별자를 달아 포함 관계를 정의하는 방법이다
+- 타입에 특정 갑을 고정으로 가지는 속성을 선언하여 덕타이핑으로 발생하는 문제를 피하는 방법이다
+
+```ts
+type TextError = {
+  errorType: 'TEXT';
+  errorCode: string;
+  errorMessage: string;
+};
+
+type ToastError = {
+  errorType: 'Toast';
+  errorCode: string;
+  errorMessage: string;
+  toastShowDuration: number;
+};
+
+type AlertError = {
+  errorType: 'Alert';
+  errorCode: string;
+  errorMessage: string;
+  onConfirm: () => void;
+};
+
+type ErrorFeedbackType = TextError | ToastError | AlertError;
+
+const errArr: ErrorFeedbackType[] = [
+  {
+    errorType: 'TEXT',
+    errorCode: '999',
+    errorMessage: '잘못된에러',
+    toastShowDuration: 3000, // errorType: 'TEXT' 로 인하여 ERR 발생
+    onConfirm: () => {}, // errorType: 'TEXT' 로 인하여 ERR 발생
+  },
+];
+```
+
+### 4.3.3 식별할 수 있는 유니온의 판별자 선정
+
+- 식별할 수 있는 유니온의 판별자는 쪼개질 수 없는 유닛 타입(null, undefined, true, 1. 리터럴)으로 선언되어야 정상적으로 동작한다
+- 유닛 타입이 아니거나 할당이 가능한 타입(string, number, void)은 타입 좁히기의 기능 자체가 동작을 하지 않게 된다
+
+## 4.4 Exhaustiveness Checking 으로 정확한 타입 분기 유지하기
+
+- Exhaustiveness Checking 으로 타입 검사를 강제하여 안전하게 처리 가능
+
+### 4.4.1 상품권
+
+- Exhaustiveness Checking 하지 않을 경우 아래의 코드는 어느 한쪽에서 처리를 깜박할 경우 버그 발생
+
+```ts
+type ProductPrice = '10000' | '20000' | '5000';
+
+// type 의 값이 추가 될때 마다 함수의 조건도 추가되어야 하는 구조 -> 어느 한쪽이 잘못되면 예상치 못한 버그 발생 가능
+const getProductName = (productPrice: ProductPrice): string => {
+  if (productPrice === '10000') return '배민상품권 1만원';
+  if (productPrice === '20000') return '배민상품권 2만 원';
+  if (productPrice === '5000') return '배민상품권 5천 원'; // 조건 추가 필요
+  else {
+    return '배민상품권';
+  }
+};
+```
+
+- 매개변수를 never 로 받는 Exhaustiveness Checking 을 추가하여 Early return 이 안되어 해당 함수가 실행되면 타입 문제가 있는 것이므로 타입 에러를 발생
+
+```ts
+type ProductPrice = '10000' | '20000' | '5000';
+const getProductName = (productPrice: ProductPrice): string => {
+  if (productPrice === '10000') return '배민상품권 1만 원';
+  if (productPrice === '20000') return '배민상품권 2만 원';
+  // if (productPrice === "5000") return "배민상품권 5천 원";
+  else {
+    exhaustiveCheck(productPrice); // Error: Argument of type ‘string’ is not assign able to parameter of type ‘never’
+    return '배민상품권';
+  }
+};
+
+// 매개변수를 never 로 처리하여, getProductName 에서 early return 으로 처리되지 않아 exhaustiveCheck 가 실행이 되면 Type 에러
+const exhaustiveCheck = (param: never) => {
+  throw new Error('type error!');
+};
+```
+
+\*\* [p.147] 해당 패턴은 매우 좋네요!
+\*\* [p.148] 프로덕트 코드에 삽인하는 어설션과 테스트 코드에 대한 시각도 재미있네요. 다들 어찌 생각하시나요?
