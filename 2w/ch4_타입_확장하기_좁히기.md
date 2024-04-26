@@ -198,3 +198,131 @@ const getGifUrlFromSpecialMenuList = (specialMenuList: SpecialMenu[]) => {
 
 console.log(getGifUrlFromSpecialMenuList(specialMenuList2));
 ```
+
+## 4.2 타입 좁히기 - 타입 가드
+
+### 4.2.1 타입 가드에 따라 분기 처리하기
+
+- 타입 가드는 런타임에 조건문을 사용하여 타입을 검사하고 타입 범위를 좁혀주는 기능
+- 주로 typeof, instanceof, in 과 같은 연산자를 사용하여 처리
+
+### 4.2.2 원시 타입을 추론할 때: typeof 연산자 활용하기
+
+- typeof 연산자를 활용하여 검사할 수 있는 타입 목록
+- string / number / boolean / undefined / object / function / bigint / symbol
+
+```ts
+// 함수 타입을 먼저 지정하고, 변수에 타입을 할당한 뒤 함수 구현
+const replaceHyphen: (date: string | Date) => string | Date = (date) => {
+  if (typeof date === 'string') {
+    return date.replace(/-/g, '/');
+  }
+
+  return date;
+};
+
+// 변수에 함수를 직접 할당, 위와 달리 TS 가 함수를 보고 함수의 타입을 추론
+const replaceHyphen2 = (date: string | Date): string | Date => {
+  if (typeof date === 'string') {
+    return date.replace(/-/g, '/');
+  }
+
+  return date;
+};
+```
+
+### 4.2.3 인스턴스화된 객체 타입을 판별할 때: instanceof 연산자 활용하기
+
+- 인스턴스화 된 객체 타입을 판별하는 타입 가드가 필요할 때에는 instanceof 연산자를 사용한다
+
+```ts
+interface Range {
+  start: Date;
+  end: Date;
+}
+
+interface DatePickerProps {
+  selectedDates?: Date | Range;
+}
+
+const DatePicker = ({ selectedDates }: DatePickerProps) => {
+  const [selected, setSelected] = useState(convertToRange(selectedDates));
+};
+
+export function convertToRange(selected?: Date | Range): Range | undefined {
+  return selected instanceof Date
+    ? { start: selected, end: selected }
+    : selected;
+}
+```
+
+### 4.2.4 객체의 속성이 있는지 없느지에 따른 구분: in 연산자 활용하기
+
+- A in B 로 사용, A 속성이 B 객체에 존재하는지 여부를 체크
+
+```ts
+interface BasicNoticeDialogProps {
+  noticeTitle: string;
+  noticeBody: string;
+}
+
+interface NoticeDialogWithCookieProps extends BasicNoticeDialogProps {
+  cookieKey: string;
+  noForADay?: boolean;
+  neverAgain?: boolean;
+}
+
+export type NoticeDialogProps =
+  | BasicNoticeDialogProps
+  | NoticeDialogWithCookieProps;
+
+// 받아온 매개변수 객체에 cookieKey 속성이 존재하는지를 확인 후, 각기 다른 컴포넌트를 반환하는 훅
+const NoticeDialog: React.FC<NoticeDialogProps> = (props) => {
+  if ('cookieKey' in props) return <NoticeDialogWithCookie {...props} />;
+  return <NoticeDialogProps {...props} />;
+};
+```
+
+### 4.2.5 is 연산자로 사용자 정의 타입 가드 만들어 활용하기
+
+- A is B 형태로 사용, 함수의 리턴 값이 true 일 경우 A 매개 변수 타입을 B 타입으로 취급
+
+```ts
+export type EntityType = IDocument | IFolder;
+
+export const documentGuard = (item: EntityType): item is IDocument => {
+  // 해당 조건이 참이면 item 은 IDocument 타입
+  return item.itemType === 'document'; // 명제를 만족할 조건(boolean 값을 반환해야 함)
+};
+
+export const folderGuard = (item: EntityType): item is IFolder => {
+  // 해당 조건이 참이면 item 은 IFolder 타입
+  return item.itemType === 'folder'; // 명제를 만족할 조건(boolean 값을 반환해야 함)
+};
+```
+
+- 배민 예시
+
+```ts
+// x 매개변수가 destinationCodeList 배열에 포함되어 있으면 x 는 DestinationCode 이므로 x is DestinationCode 에 의해 DestinationCode 타입으로 처리
+const isDestinationCode = (x: string): x is DestinationCode =>
+  destinationCodeList.includes(x);
+
+const getAvailableDestinationNameList = async (): Promise<
+  DestinationName[]
+> => {
+  const data = await AxiosRequest<string[]>('get', '.../destinations');
+  const destinationNames: DestinationName[] = [];
+  data?.forEach((str) => {
+    // 타입 명제를 사용하느 isDestinationCode 를 사용해야만 TS 가 str 을 DestinationCode 타입으로 좁힐 수 있고 그렇지 않을경우 string 으로 추론하여 아래의 에러가 발생한다
+    if (isDestinationCode(str)) {
+      destinationNames.push(DestinationNameSet[str]);
+
+      /* isDestinationCode의 반환 값에 is를 사용하지 않고 boolean이라고 한다면 다음 에러가 발생한다
+      
+      - Element implicitly has an ‘any’ type because expression of type ‘string’ can’t be used to index type ‘Record<”MESSAGE_PLATFORM” | “COUPON_PLATFORM” | “BRAZE”, “통합메시지플랫폼” | “쿠폰대장간” | “braze”>’ */
+    }
+  });
+  return destinationNames;
+};
+```
