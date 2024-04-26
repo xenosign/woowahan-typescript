@@ -301,7 +301,7 @@ export const folderGuard = (item: EntityType): item is IFolder => {
 };
 ```
 
-- 배민 예시
+- 배민에서 사용하는 코드 예시
 
 ```ts
 // x 매개변수가 destinationCodeList 배열에 포함되어 있으면 x 는 DestinationCode 이므로 x is DestinationCode 에 의해 DestinationCode 타입으로 처리
