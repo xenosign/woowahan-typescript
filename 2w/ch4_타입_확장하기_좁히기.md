@@ -314,7 +314,7 @@ const getAvailableDestinationNameList = async (): Promise<
   const data = await AxiosRequest<string[]>('get', '.../destinations');
   const destinationNames: DestinationName[] = [];
   data?.forEach((str) => {
-    // 타입 명제를 사용하느 isDestinationCode 를 사용해야만 TS 가 str 을 DestinationCode 타입으로 좁힐 수 있고 그렇지 않을경우 string 으로 추론하여 아래의 에러가 발생한다
+    // 타입 명제를 사용하는 isDestinationCode 를 사용해야만 TS 가 str 매개변수를 DestinationCode 타입으로 좁힐 수 있고 그렇지 않을경우 string 으로 추론하여 아래의 에러가 발생한다
     if (isDestinationCode(str)) {
       destinationNames.push(DestinationNameSet[str]);
 
