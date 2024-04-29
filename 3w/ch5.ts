@@ -117,3 +117,36 @@ function fn(num: number) {
 
 const a: ReturnType<typeof fn> = 6;
 console.log(a); // 6
+
+type UnpackMenuNames<T extends ReadonlyArray<MenuItem>> =
+  T extends ReadonlyArray<infer U>
+    ? U extends MainMenu
+      ? U['subMenus'] extends infer V
+        ? V extends ReadonlyArray<SubMenu>
+          ? UnpackMenuNames<V>
+          : U['name']
+        : never
+      : U extends SubMenu
+      ? U['name']
+      : never
+    : never;
+
+type TestType1<T> = {
+  test: string;
+  test2: T;
+};
+
+type InnerType1 = {
+  test: string;
+  test2: number;
+};
+
+type UnpackTest<T extends TestType1<InnerType1>> = T extends TestType1<infer U>
+  ? U extends InnerType1
+    ? U['test'] extends infer V
+      ? V extends string
+        ? string
+        : U['test2']
+      : null
+    : null
+  : null;

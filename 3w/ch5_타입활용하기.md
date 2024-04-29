@@ -199,3 +199,30 @@ const promises = [Promise.resolve('Mark'), Promise.resolve(38)];
 
 type Expected = UnpackPromise<typeof promises>; // string | number
 ```
+
+\*\* [p.158] 아니... 라우팅을 모르는 사람이 이걸 보고 있겠냐고요..... 그리고 라우팅 모르는데 이 예시 코드들 이해하면.... 그거슨 바로 코딩천재
+\*\* 내용 설명이나 더 잘해줬으면 하는 작은 소망이... 그런데 이건 다 제가 TS 를 잘몰라서 생기는 이슈겠...
+
+- 실제 배민 예시 코드
+
+```ts
+type PermissionNames = '기기 정보 관리' | '안전모 인증 관리' | '운행 여부 조회';
+
+type UnpackMenuNames<T extends ReadonlyArray<MenuItem>> =
+  T extends ReadonlyArray<infer U>
+    ? U extends MainMenu
+      ? U['subMenus'] extends infer V
+        ? V extends ReadonlyArray<SubMenu>
+          ? UnpackMenuNames<V>
+          : U['name']
+        : never
+      : U extends SubMenu
+      ? U['name']
+      : never
+    : never;
+
+export type PermissionNames = UnpackMenuNames<typeof menuList>;
+```
+
+\*\* [p.161] 와 이 코드 뭐죠? Type 에서 재귀가 가능한 거였군요... 그리고 전 남이 이렇게 3항 연산자로 코드 짜오면... 걍 안읽을거 같은데....
+\*\* 메뉴가 중첩 구조로 있는 경우에는 잘 작동하겠지만, 타입을 이렇게 써야하는게 최선일까요?
