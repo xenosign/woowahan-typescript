@@ -150,3 +150,16 @@ type UnpackTest<T extends TestType1<InnerType1>> = T extends TestType1<infer U>
       : null
     : null
   : null;
+
+type Direction =
+  | 'top'
+  | 'topLeft'
+  | 'topRight'
+  | 'bottom'
+  | 'bottomLeft'
+  | 'bottomRight';
+
+type Vertical = 'top' | 'bottom';
+type Horizon = 'left' | 'right';
+
+type DirectionTemplete = Vertical | `${Vertical}${Capitalize<Horizon>}`;
