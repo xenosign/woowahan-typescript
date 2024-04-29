@@ -92,3 +92,28 @@ const testFunc = (param: 'card' | 'bank'): void => {
 };
 
 // testFunc('appcard');
+
+type MyType1<T> = T extends infer R ? R : null;
+
+const a1: MyType1<number> = 123;
+console.log(typeof a1); //number
+
+// // 사실 위와 같은 코드는 아래와 동일하다
+// type MyNormalType<T> = T extends number ? number : null;
+
+// type MyInferType<T> = T extends infer R ? R : null;
+
+// // 기존에 지정한 union 이외의 타입을 지정하려 하면 아래와 같이 에러 발생 -> 따라서 타입이 추가되면 MyNormalType 에 조건부에 union 타입을 지속적으로 추가 필요
+// const testNormal: MyNormalType<string> = 'string';
+
+// // 전달 받은 타입을 infer 로 추론한 R 을 사용하여 타입을 지정하므로, 타입이 추가될 때마다 union 타입을 추가할 필요가 없음. 유틸리티 타입으로 활용 가능
+// const testInfer: MyInferType<string> = 'string';
+
+type FuncReturnType<T extends (...args: any) => any> = string | number; // 유니온 타입
+
+function fn(num: number) {
+  return num;
+}
+
+const a: ReturnType<typeof fn> = 6;
+console.log(a); // 6
