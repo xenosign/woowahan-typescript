@@ -239,7 +239,3 @@ type HeaderTag = `h${HeadingNumber}`;
 ```
 
 - 실제 배민 예시
-
-```ts
-
-```
