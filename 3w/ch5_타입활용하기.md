@@ -238,4 +238,155 @@ type HeadingNumber = 1 | 2 | 3 | 4 | 5;
 type HeaderTag = `h${HeadingNumber}`;
 ```
 
-- 실제 배민 예시
+- Direction 타입의 경우 모든 상황을 리터럴로 전부 선언하지 않고, 수직 - 수평에 대한 타입을 템플릿 리터럴 타입으로 조합하여 사용이 가능하다
+
+```ts
+// 전부 선언한 리터럴 타입
+type Direction =
+  | 'top'
+  | 'topLeft'
+  | 'topRight'
+  | 'bottom'
+  | 'bottomLeft'
+  | 'bottomRight';
+
+// 수직 - 수평 타입을 템플릴 리터럴로 조합
+type Vertical = 'top' | 'bottom';
+type Horizon = 'left' | 'right';
+
+type DirectionTemplete = Vertical | `${Vertical}${Capitalize<Horizon>}`;
+```
+
+- 유니온 타입 경우의 수가 너무 많은 경우 TS 의 타입 추론 시간이 너무 오래걸려 에러를 발생 시킬 수 있으므로 적절히 나누어 사용해야 한다
+
+```ts
+type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+type Chunk = `${Digit}${Digit}${Digit}${Digit}`;
+type PhoneNumberType = `010-${Digit}-${Digit}`;
+
+// 위의 타입은 10^4 의 타입을 2개 연속으로 가지는 타입이므로 최종적으로 (10^4)^2 의 경우의 수를 가지게 되는 안좋은 예시가 된다
+```
+
+## 5.3 커스텀 유틸리티 타입 활용하기
+
+### 5.3.1 유틸리티 함수를 활용해 styled-components 의 중복 타입 선언 피하기
+
+- styled-components 를 사용하여 동적 스타일링을 구현하는 경우 styled-components 에 전달하기위한 StyledProps 가 발생
+- 하지만 StyledProps 의 경우 컴포넌트에서 받은 Props 의 특정 속성을 그대로 받아오는 것이기 때문에, 따로 선언하여 사용할 경우 코드 중복이 발생한다
+
+- 이러한 상황에서 StyledProps 를 따로 선언하여 사용하는 경우의 코드
+- Props 정확하게 동일한 타입의 StyledProps 를 별도로 선언하여 코드 중복이 발생하며, Props 의 속성이 변경되면 StyledProps 도 동일하게 변경을 해줘야 하는 문제점이 발생한다
+
+```ts
+// HrComponent.tsx
+export type Props = {
+  height?: string;
+  color?: keyof typeof colors;
+  isFull?: boolean;
+  className?: string;
+}
+
+export const Hr: VFC<Props> = ({ height, color, isFull, className }) => {
+  return <HrComponent height={height} color={color} isFull={isFull} className={class Name} />;
+};
+
+// style.ts
+type StyledProps = {
+  height?: string;
+  color?: keyof typeof Color;
+  isFull?: boolean;
+  className?: string;
+}
+```
+
+- Pick(타입의 특정 속성만 가져오기), Omit(타입의 특정 속성만 빼고 가져오기)를 사용하여 StyledProps 에 필요한 속성만 Props 에서 가져와서 문제점을 수정한 코드
+
+```ts
+// HrComponent.tsx
+export type Props = {
+  height?: string;
+  color?: keyof typeof colors;
+  isFull?: boolean;
+  className?: string;
+}
+
+export const Hr: VFC<Props> = ({ height, color, isFull, className }) => {
+  return <HrComponent height={height} color={color} isFull={isFull} className={class Name} />;
+};
+
+// style.ts
+type UtilityStyledProps = Pick<Props, 'height' | 'color' | 'isFull'>;
+```
+
+### 5.3.2 PickOne 유틸리티 함수
+
+- TS 에서는 서로 다른 2개 이상의 객체를 유니온 타입으로 받을 때 타입 검사가 제대로 진행되지 않는 이슈가 발생
+- 이런 문제를 해결하기 위해 PickOne 이라는 유틸리티 함수가 사용
+
+- CreditCard, 또는 Account 중 하나의 타입만 받고 싶은 상황에서 유니온을 사용하였으나 제대로 타입 검사가 이루어지지 않는 케이스
+
+```ts
+type Account = {
+  account: string;
+};
+
+function withdraw(type: CreditCard | Account) {
+  // Do sth
+}
+
+withdraw({ card: 'hyundai', account: 'hana' }); // Err 가 발생하지 않는다
+```
+
+#### 식별할 수 있는 유니온으로 객체 타입을 유니온으로 받기
+
+- 각각의 타입에 type 이라는 속성을 추가하여 객체를 구분할 수 있도록 처리
+- type 에는 유니온이 적용되어 'card', 'account' 를 둘 다 쓸 수 있지만 해당 값이 결정되면 type 검사가 더 명확하게 진행되어 이전과 같이 card, account 속성을 동시에 사용이 불가능해진다
+
+```ts
+type CreditCard = {
+  type: 'card';
+  card: string;
+};
+
+type Account = {
+  type: 'account';
+  account: string;
+};
+
+function withdraw(type: CreditCard | Account) {
+  // Do sth
+}
+
+withdraw({ type: 'card', card: 'hyundai', account: 'hana' }); // account 속성에서 ERR 발생
+```
+
+- 하지만 이러한 경우는 모든 경우에 수의 type 을 전부 넣어줘야 하는 문제 및 해당 함수가 호출 되는 부분에 대한 모든 수정이 필요한 한계가 발생
+
+#### PickOne 커스텀 유틸리티 타입 구현하기
+
+- TS 에서 제공하는 유틸리티 타입을 활용하여 커스텀 유틸리티 타입을 만들어 해결이 가능
+- 유니온에 의해 합집합 처리가 되는 속성에 옵셔널 undefined 를 붙여 사용자가 고의적으로 undefined 를 넣는게 아니면 타입 에러는 발생 시키는 방법으로 해결하기
+
+```ts
+type CreditCard = {
+  account?: undefined;
+  card: string;
+};
+
+type Account = {
+  account: string;
+  card?: undefined;
+};
+
+function withdraw(type: CreditCard | Account) {
+  // Do sth
+}
+
+withdraw({ card: 'hyundai', account: 'hana' }); // Card 를 의도했다면 account 에 undefined 가 아닌 string 값이 왔으므로 ERR 발생, 반대도 성립
+```
+
+- 위의 Case 를 커스텀 유틸리티 타입으로 구현한 타입
+
+```ts
+
+```

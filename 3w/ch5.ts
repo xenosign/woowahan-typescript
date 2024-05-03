@@ -163,3 +163,70 @@ type Vertical = 'top' | 'bottom';
 type Horizon = 'left' | 'right';
 
 type DirectionTemplete = Vertical | `${Vertical}${Capitalize<Horizon>}`;
+
+// type CreditCard = {
+//   card: string;
+// };
+
+// type Account = {
+//   account: string;
+// };
+
+// function withdraw(type: CreditCard | Account) {
+//   // Do sth
+// }
+
+// withdraw({ card: 'hyundai', account: 'hana' });
+
+// type CreditCard = {
+//   type: 'card';
+//   card: string;
+// };
+
+// type Account = {
+//   type: 'account';
+//   account: string;
+// };
+
+// function withdraw(type: CreditCard | Account) {
+//   // Do sth
+// }
+
+// withdraw({ type: 'card', card: 'hyundai', account: 'hana' });
+
+type PickOne<T> = {
+  [P in keyof T]: Record<P, T[P]> &
+    Partial<Record<Exclude<keyof T, P>, undefined>>;
+}[keyof T];
+
+type PickOne1<T> = {
+  [P in keyof T]: T[P] & Partial<Record<Exclude<keyof T, P>, undefined>>;
+}[keyof T];
+
+type PickOne2<T> = T extends infer U ? { [K in keyof U]: U[K] } : never;
+
+type CreditCard = {
+  card: string;
+};
+
+type Account = {
+  account: string;
+};
+
+type CardOrAccount1 = PickOne1<CreditCard | Account>;
+
+type CardOrAccount2 = PickOne2<CreditCard | Account>;
+
+function withdraw(type: CardOrAccount1) {
+  // Do sth
+}
+
+withdraw({ card: 'hyundai' });
+
+type Test<T> = {
+  [P in keyof T]: T[P];
+}[keyof T];
+
+type TestType = Test<Account>;
+
+// const arr: TestType = [{ account: '1' }];
