@@ -387,8 +387,122 @@ withdraw({ card: 'hyundai', account: 'hana' }); // Card 를 의도했다면 acco
 
 - 위의 Case 를 커스텀 유틸리티 타입으로 구현한 타입
 
-\*\* [p.168] 안되는 타입 코드 + 그 코드를 설명한 설명...... 이 끔찍한 혼종은 무엇인가
+\*\* [p.168] 진짜 설명이랑 흐름이 하...... 또 화가 많이 나네
 
 ```ts
+type CreditCard = {
+  card: string;
+};
 
+type Account = {
+  account: string;
+};
+
+type PickOne<T> = {
+  [P in keyof T]: Record<P, T[P]> &
+    Partial<Record<Exclude<keyof T, P>, undefined>>;
+}[keyof T];
+
+// 갑자기 여기 조건은 & 로 변경
+type CardOrAccount = PickOne<CreditCard & Account>;
+
+function withdraw(type: CardOrAccount) {
+  // Do sth
+}
+
+withdraw({ card: 'hyundai' });
+```
+
+- GPT 가 추천한 PickOne 타입 버전 코드
+
+```ts
+type CreditCard = {
+  card: string;
+};
+
+type Account = {
+  account: string;
+};
+
+// 유니온에 합집합으로 모인 속성이 전해진 타입에 포함이면 해당 속성의 타입으로 반환하고, 포함되지 경우라면 undefined 를 고정으로 가지도록 만드는 타입
+type PickOne2<T> = T extends infer U ? { [K in keyof U]: U[K] } : undefined;
+
+type CardOrAccount2 = PickOne2<CreditCard | Account>;
+
+function withdraw2(type: CardOrAccount2) {
+  // Do sth
+}
+
+withdraw2({ card: 'hyundai' });
+```
+
+#### PickOne 살펴보기
+
+\*\* [p.169] 뭐라 하나 봅시다잉 ㅋㅋㅋㅋㅋ
+
+```ts
+type One<T> = { [P in keyof T]: Record<P, T[P]> }[keyof T];
+
+// 1) P 는 T 객체의 키 값
+// 2) 해당 속성값은 Record<P, T[P]> 에 의해 P 라는 키를 가지고 값은 전해진 객체의 값의 타입을 가진다
+// 3) 따라서 2)에 의해 전해진 값은 전달된 객체의 키에 값이 Record<P, T[P]> 로 전해진 객체의 유니온 값이 된다
+// 4) 최종에서 다시 [keyof T] 의 키값으로 접근하므로 Record<P, T[P]> 의 유니온 값들이 하나로 합쳐지는 효과를 가진다
+
+// 예시
+type CreditCard = {
+  card: string;
+};
+
+type Account = {
+  account: string;
+};
+
+type One<T> = { [P in keyof T]: Record<P, T[P]> }[keyof T];
+
+// 위의 코드에서 3)의 상태에서 One 타입의 결과물은 card: Record<'card', string> | account: Record<'age', string> 이라는 유니온 값을 가짐
+// 그런데 이러면 속성 값을 둘 다 가져도 걸러내지 못하기 때문에 ExcludeOne 이라는 타입을 합쳐줘서 필요없는 속성에는 undefined 를 강제 시켜줘야함
+
+type ExcludeOne<T> = {
+  [P in keyof T]: Partial<Record<Exclude<keyof T, P>, undefined>>;
+}[keyof T];
+
+// PickOne 은 전달 받은 속성 값을 전부 가진 타입과, 공통되지 않은 속성은 undefined 로 강제되는 타입의 합집합의 형태를 가진다
+type PickOne<T> = One<T> & ExcludeOne<T>;
+
+type CardOrAccount = PickOne<CreditCard & Account>;
+
+function withdraw(type: CardOrAccount) {
+  // do sth
+}
+
+withdraw({ card: 'card' });
+withdraw({ card: 'card', account: 'account' }); // ERR
+```
+
+\*\* [p.171] 진짜 설명 오질라게 못하네, 게다가 설명 와중에 컨디션은 개같이 변경되고 흐름도 쓰레기고 허허허허허허허허허허허허허허허 개빡친다
+
+### 5.3.3 NonNullable 타입 검사 함수를 사용하여 간편하게 타입 가드하기
+
+#### NonNullable 타입이란?
+
+- 제네릭이 null 또는 undefined 타입일 경우 never 또는 T 를 반환하는 타입, 이를 이용하여 null 이나 undefined 가 아닌 경우를 제외 가능하다
+
+```ts
+type NonNullable<T> = T extends null | undefined ? never : T;
+```
+
+#### null, undefined 를 검사하는 isNonNullable 함수
+
+- 해당 함수에 value 로 전달하면 null 이나 undefined 가 아닌 타입으로 타입을 좁힐 수 있다
+
+```ts
+function isNonNullable<T>(value: T): value is NonNullable<T> {
+  return value !== null && value !== undefined;
+}
+
+const nullType: null = null;
+const notNullType: string = 'string';
+
+console.log(isNonNullable(nullType));
+console.log(isNonNullable(notNullType));
 ```

@@ -194,17 +194,129 @@ type DirectionTemplete = Vertical | `${Vertical}${Capitalize<Horizon>}`;
 
 // withdraw({ type: 'card', card: 'hyundai', account: 'hana' });
 
-type PickOne<T> = {
-  [P in keyof T]: Record<P, T[P]> &
-    Partial<Record<Exclude<keyof T, P>, undefined>>;
-}[keyof T];
+// type PickOne<T> = {
+//   [P in keyof T]: Record<P, T[P]> &
+//     Partial<Record<Exclude<keyof T, P>, undefined>>;
+// }[keyof T];
 
-type PickOne1<T> = {
-  [P in keyof T]: T[P] & Partial<Record<Exclude<keyof T, P>, undefined>>;
-}[keyof T];
+// type PickOne1<T> = {
+//   [P in keyof T]: T[P] & Partial<Record<Exclude<keyof T, P>, undefined>>;
+// }[keyof T];
 
-type PickOne2<T> = T extends infer U ? { [K in keyof U]: U[K] } : never;
+// type PickOne2<T> = T extends infer U ? { [K in keyof U]: U[K] } : undefined;
 
+// type CreditCard = {
+//   card: string;
+// };
+
+// type Account = {
+//   account: string;
+// };
+
+// type CardOrAccount = PickOne<CreditCard | Account>;
+
+// type CardOrAccount1 = PickOne1<CreditCard | Account>;
+
+// type CardOrAccount2 = PickOne2<CreditCard | Account>;
+
+// function withdraw(type: CardOrAccount) {
+//   // Do sth
+// }
+
+// withdraw({ card: 'hyundai' });
+
+// function withdraw1(type: CardOrAccount1) {
+//   // Do sth
+// }
+
+// withdraw1({ card: 'hyundai' });
+
+// function withdraw2(type: CardOrAccount2) {
+//   // Do sth
+// }
+
+// withdraw2({ card: 'hyundai' });
+
+// type Test<T> = {
+//   [P in keyof T]: T[P];
+// }[keyof T];
+
+// type TestType = Test<Account>;
+
+// const arr: TestType = [{ account: '1' }];
+
+// type CreditCard = {
+//   card: string;
+// };
+
+// type Account = {
+//   account: string;
+// };
+// type One<T> = { [P in keyof T]: Record<P, T[P]> }[keyof T];
+
+// type ExcludeOne<T> = {
+//   [P in keyof T]: Partial<Record<Exclude<keyof T, P>, undefined>>;
+// }[keyof T];
+
+// type CardAndAccount = CreditCard & Account;
+
+// type PickOne<T> = One<T> & ExcludeOne<T>;
+
+// type PickOneType = PickOne<CardAndAccount>;
+
+// const testObj: PickOneType = { card: 'str' };
+
+// type Two<T> = { [P in keyof T]: Record<P, T[P]> };
+
+// type TestTwo = Two<{ card: string }>;
+
+// const twoObj: TestTwo = { card: { card: 'test' } };
+
+// type One<T> = { [P in keyof T]: Record<P, T[P]> }[keyof T];
+// type ExcludeOne<T> = {
+//   [P in keyof T]: Partial<Record<Exclude<keyof T, P>, undefined>>;
+// }[keyof T];
+
+// type PickOne<T> = One<T> & ExcludeOne<T>;
+
+// type CreditCard = {
+//   card: string;
+// };
+
+// type Account = {
+//   account: string;
+// };
+
+// type CardOrAccount = PickOne<CreditCard & Account>;
+
+// function withdraw(type: CardOrAccount) {
+//   // do sth
+// }
+
+// withdraw({ card: 'card' });
+
+// type CreditCard = {
+//   card: string;
+// };
+
+// type Account = {
+//   account: string;
+// };
+
+// type PickOne<T> = {
+//   [P in keyof T]: Record<P, T[P]> &
+//     Partial<Record<Exclude<keyof T, P>, undefined>>;
+// }[keyof T];
+
+// type CardOrAccount = PickOne<CreditCard & Account>;
+
+// function withdraw(type: CardOrAccount) {
+//   // Do sth
+// }
+
+// withdraw({ card: 'hyundai' }); // ERR 발생, never 타입으로 설정
+
+// 예시
 type CreditCard = {
   card: string;
 };
@@ -213,34 +325,35 @@ type Account = {
   account: string;
 };
 
-type CardOrAccount = PickOne<CreditCard | Account>;
+type One<T> = { [P in keyof T]: Record<P, T[P]> }[keyof T];
 
-type CardOrAccount1 = PickOne1<CreditCard | Account>;
+// 위의 코드에서 3)의 상태에서 TestOne 은 card: Record<'card', string> | account: Record<'age', string> 이라는 유니온 값을 가짐
+// 그런데 이러면 속성 값을 둘 다 가져도 걸러내지 못하기 때문에 ExcludeOne 이라는 타입을 합쳐줘서 필요없는 속성에는 undefined 를 강제 시켜줘야함
 
-type CardOrAccount2 = PickOne2<CreditCard | Account>;
-
-function withdraw(type: CardOrAccount) {
-  // Do sth
-}
-
-withdraw({ card: 'hyundai' });
-
-function withdraw1(type: CardOrAccount1) {
-  // Do sth
-}
-
-withdraw1({ card: 'hyundai' });
-
-function withdraw2(type: CardOrAccount2) {
-  // Do sth
-}
-
-withdraw2({ card: 'hyundai' });
-
-type Test<T> = {
-  [P in keyof T]: T[P];
+type ExcludeOne<T> = {
+  [P in keyof T]: Partial<Record<Exclude<keyof T, P>, undefined>>;
 }[keyof T];
 
-type TestType = Test<Account>;
+// PickOne 은 전달 받은 속성 값을 전부 가진 타입과, 공통되지 않은 속성은 undefined 로 강제되는 타입의 합집합의 형태를 가진다
+type PickOne<T> = One<T> & ExcludeOne<T>;
 
-// const arr: TestType = [{ account: '1' }];
+// 여기서 조건이 & 로 변경 시발!!!!!
+type CardOrAccount = PickOne<CreditCard & Account>; // 합집합의 속성이 각기 반환된다
+
+function withdraw(type: CardOrAccount) {
+  // do sth
+}
+
+withdraw({ card: 'card' });
+
+// type NonNullable<T> = T extends null | undefined ? never : T;
+
+function isNonNullable<T>(value: T): value is NonNullable<T> {
+  return value !== null && value !== undefined;
+}
+
+const nullType: null = null;
+const notNullType: string = 'string';
+
+console.log(isNonNullable(nullType));
+console.log(isNonNullable(notNullType));
