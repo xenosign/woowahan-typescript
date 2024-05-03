@@ -213,15 +213,29 @@ type Account = {
   account: string;
 };
 
+type CardOrAccount = PickOne<CreditCard | Account>;
+
 type CardOrAccount1 = PickOne1<CreditCard | Account>;
 
 type CardOrAccount2 = PickOne2<CreditCard | Account>;
 
-function withdraw(type: CardOrAccount1) {
+function withdraw(type: CardOrAccount) {
   // Do sth
 }
 
 withdraw({ card: 'hyundai' });
+
+function withdraw1(type: CardOrAccount1) {
+  // Do sth
+}
+
+withdraw1({ card: 'hyundai' });
+
+function withdraw2(type: CardOrAccount2) {
+  // Do sth
+}
+
+withdraw2({ card: 'hyundai' });
 
 type Test<T> = {
   [P in keyof T]: T[P];
