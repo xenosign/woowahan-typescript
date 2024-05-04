@@ -427,17 +427,51 @@ foodByCategory['양식'];
 
 // type Result = MyExclude<'a' | 'b' | 'c', 'a'>; // 'b' | 'c'
 
-type Uion = string | number;
+// type Uion = string | number;
 
-type ReturnUnionType<T extends Uion> = T;
+// type ReturnUnionType<T extends Uion> = T;
 
-const quizVal: ReturnUnionType<string> = 'str';
-const quizVal2: ReturnUnionType<null> = null;
+// const quizVal: ReturnUnionType<string> = 'str';
+// const quizVal2: ReturnUnionType<null> = null;
 
-type QuizType<T> = T extends infer K ? K : null;
+// type QuizType<T> = T extends infer K ? K : null;
 
-type MyReadonly<T> = {
-  readonly [P in keyof T]: T[P];
+// type MyReadonly<T> = {
+//   readonly [P in keyof T]: T[P];
+// };
+
+// type MyExclude<T, U> = T extends U ? never : T;
+
+type PropertyTypeFilter<T, FilterType> = {
+  [K in keyof T as T[K] extends FilterType ? never : K]: T[K];
 };
 
-type MyExclude<T, U> = T extends U ? never : T;
+type TestType = {
+  a: string;
+  b: number;
+  c: boolean;
+};
+
+type FilteredType = PropertyTypeFilter<TestType, number>;
+
+const obj: FilteredType = { a: 'str', c: false };
+
+// type MyExclude<T, U> = T extends U ? never : T;
+
+// type Result = MyExclude<'a' | 'b' | 'c', 'a'>; // 'b' | 'c’
+
+// type MyReadonly<T> = {
+//   readonly [P in keyof T]: T[P];
+// };
+
+// interface Todo {
+//   title: string;
+//   description: string;
+// }
+// const todo: MyReadonly<Todo> = {
+//   title: 'Hey',
+//   description: 'foobar',
+// };
+
+// todo.title = 'Hello'; // Error: cannot reassign a readonly property
+// todo.description = 'barFoo'; // Error: cannot reassign a readonly property
