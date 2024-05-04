@@ -411,3 +411,33 @@ const foodByCategory: PartialRecord<Category, Food[]> = {
 
 foodByCategory['양식'];
 // foodByCategory['양식'].map((food) => console.log(food));
+
+// interface Todo {
+//   title: string;
+//   description: string;
+// }
+
+// const todo: MyReadonly<Todo> = {
+//   title: 'Hey',
+//   description: 'foobar',
+// };
+
+// todo.title = 'Hello'; // Error: cannot reassign a readonly property
+// todo.description = 'barFoo'; // Error: cannot reassign a readonly property
+
+// type Result = MyExclude<'a' | 'b' | 'c', 'a'>; // 'b' | 'c'
+
+type Uion = string | number;
+
+type ReturnUnionType<T extends Uion> = T;
+
+const quizVal: ReturnUnionType<string> = 'str';
+const quizVal2: ReturnUnionType<null> = null;
+
+type QuizType<T> = T extends infer K ? K : null;
+
+type MyReadonly<T> = {
+  readonly [P in keyof T]: T[P];
+};
+
+type MyExclude<T, U> = T extends U ? never : T;
