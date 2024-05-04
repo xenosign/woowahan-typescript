@@ -357,3 +357,32 @@ const notNullType: string = 'string';
 
 console.log(isNonNullable(nullType));
 console.log(isNonNullable(notNullType));
+
+const colors = {
+  black: '#000000',
+  gray: '#222222',
+  white: '#FFFFFF',
+  mint: '#2AC1BC',
+};
+
+const theme = {
+  colors: {
+    default: colors.gray,
+    ...colors,
+  },
+  backgroundColor: {
+    default: colors.white,
+    gray: colors.gray,
+    mint: colors.mint,
+    black: colors.black,
+  },
+  fontSize: {
+    default: '16px',
+    small: '14px',
+    large: '18px',
+  },
+};
+
+type ColorType = keyof typeof theme.colors;
+type BackgroundColorType = keyof typeof theme.backgroundColor;
+type FontSizeType = keyof typeof theme.fontSize;

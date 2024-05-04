@@ -506,3 +506,126 @@ const notNullType: string = 'string';
 console.log(isNonNullable(nullType));
 console.log(isNonNullable(notNullType));
 ```
+
+## 5.4 불변 객체 타입으로 활용하기
+
+### 5.4.1 Atom 컴포넌트에서 theme style 객체 활용하기
+
+- theme 객체를 통해 색상을 as const 로 선언하여 불변 객체로 선언하여 사용
+- 값을 받을 때에는 리터럴을 이용하여 접근하여 사용
+
+```ts
+interface Props {
+  fontSize?: string;
+  backgroundColor?: string;
+  color?: string;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void | Promise<void>;
+}
+
+const Button: FC<Props> = ({ fontSize, backgroundColor, color, children }) => {
+  return (
+    <ButtonWrap
+      fontSize={fontSize}
+      backgroundColor={backgroundColor}
+      color={color}
+    >
+      {' '}
+      {children}{' '}
+    </ButtonWrap>
+  );
+};
+
+// theme 컬러는 props 로 받아온 값을 적용하기 위해 리터럴 접근법 사용
+const ButtonWrap = styled.button<Omit<Props, 'onClick'>>`
+  color: ${({ color }) => theme.color[color ?? 'default']};
+  background-color: ${({ backgroundColor }) =>
+    theme.bgColor[backgroundColor ?? 'default']};
+  font-size: ${({ fontSize }) => theme.fontSize[fontSize ?? 'default']};
+`;
+```
+
+#### 타입스크립트 keyof 연산자로 객체의 키값을 타입으로 추출하기
+
+- keyof 연산자를 사용하면 객체의 키 값을 string 또는 리터럴 유니온으로 반환
+
+```ts
+interface ColorType {
+  red: string;
+  green: string;
+  blue: string;
+}
+
+type ColorKeyType = keyof ColorType; // 'red' | 'green' | 'blue'
+```
+
+#### 타입스크립트 typeof 연산자로 값을 타입으로 다루기
+
+- 컬러 객체의 타입 자체를 반환하는 typeof 를 사용
+
+#### 객체의 타입을 활용해서 컴포넌트 구현하기
+
+```ts
+import { FC } from 'react';
+import styled from 'styled-components';
+
+const colors = {
+  black: '#000000',
+  gray: '#222222',
+  white: '#FFFFFF',
+  mint: '#2AC1BC',
+};
+
+const theme = {
+  colors: {
+    default: colors.gray,
+    ...colors,
+  },
+  backgroundColor: {
+    default: colors.white,
+    gray: colors.gray,
+    mint: colors.mint,
+    black: colors.black,
+  },
+  fontSize: { default: '16px', small: '14px', large: '18px' },
+};
+
+// theme 객체의 타입을 추출하여 타입을 만들기
+// 그 와중에 typeof keyof 순서 바뀐거 실화냐....
+type ColorType = keyof typeof theme.colors;
+type BackgroundColorType = keyof typeof theme.backgroundColor;
+type FontSizeType = keyof typeof theme.fontSize;
+
+// Props 에 theme 객체의 타입을 추출하여 적용한 타입을 적용
+interface Props {
+  color?: ColorType;
+  backgroundColor?: BackgroundColorType;
+  fontSize?: FontSizeType;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void | Promise<void>;
+}
+
+const Button: FC<Props> = ({ fontSize, backgroundColor, color, children }) => {
+  return (
+    <ButtonWrap
+      fontSize={fontSize}
+      backgroundColor={backgroundColor}
+      color={color}
+    >
+      {children}
+    </ButtonWrap>
+  );
+};
+
+const ButtonWrap = styled.button<Omit<Props, 'onClick'>>`
+  color: ${({ color }) => theme.color[color ?? 'default']};
+  background-color: ${({ backgroundColor }) =>
+    theme.bgColor[backgroundColor ?? 'default']};
+  font-size: ${({ fontSize }) => theme.fontSize[fontSize ?? 'default']};
+`;
+```
+
+\*\* [p.178] typeof keyof 순서가 바뀐거는 진짜 이 예제코드가 진짜 배민에서 쓰이는가 하는 의문이 드네요.. ㅂㄷㅂㄷ
+\*\* 예제 화면으로 나온거만봐도 TestComponent 인거 보면, 책 쓰려고 걍 막 코드 만든게 아닌가 하는 의심도...
+
+## 5.5 Record 원시 타입 키 개선하기
+
+### 5.5.1 무한한 키를 집합으로 가지는 Record
